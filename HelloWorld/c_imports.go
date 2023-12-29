@@ -82,7 +82,7 @@ func c_http_get_callback(ptr_result unsafe.Pointer, userData unsafe.Pointer) {
 
 func (client HttpClient) GetAsync(url string, callback func(result *HttpGetResult)) {
 	c_url := NewCString(url)
-	C.HttpClient_GetAsync(client.ptr, c_url.ptr, (*[0]byte)(C.c_http_get_callback), unsafe.Pointer(&callback))
+	C.HttpClient_GetAsync(client.ptr, c_url.ptr, (C.HttpGetCallback)(C.c_http_get_callback), unsafe.Pointer(&callback))
 }
 
 type Element interface {
@@ -182,7 +182,7 @@ func c_btn_click_callback(userData unsafe.Pointer) {
 }
 
 func (button Button) SetOnClick(callback func()) {
-	C.Button_SetOnClick(button.ptr, (*[0]byte)(C.c_btn_click_callback), unsafe.Pointer(&callback))
+	C.Button_SetOnClick(button.ptr, (C.ClickCallback)(C.c_btn_click_callback), unsafe.Pointer(&callback))
 }
 
 type ScriptWindow struct {
