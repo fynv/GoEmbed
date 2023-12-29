@@ -36,6 +36,8 @@ func Init() {
 
 //export Clean
 func Clean() {
+	window = nil
+	http = nil
 	runtime.GC()
 }
 

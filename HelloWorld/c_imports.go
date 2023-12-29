@@ -43,7 +43,7 @@ func NewHttpGetResult(ptr unsafe.Pointer) *HttpGetResult {
 	return pobj
 }
 
-func (result HttpGetResult) GetString() string {
+func (result *HttpGetResult) GetString() string {
 	size := uintptr(C.HttpGetResult_GetSize(result.ptr))
 	pdata := C.HttpGetResult_GetData(result.ptr)
 
@@ -68,7 +68,7 @@ func NewHttpClient() *HttpClient {
 	return pobj
 }
 
-func (client HttpClient) Get(url string) *HttpGetResult {
+func (client *HttpClient) Get(url string) *HttpGetResult {
 	c_url := NewCString(url)
 	ptr := C.HttpClient_Get(client.ptr, c_url.ptr)
 	return NewHttpGetResult(ptr)
@@ -83,7 +83,7 @@ func c_http_get_callback(ptr_result unsafe.Pointer, userData unsafe.Pointer) {
 	h.Delete()
 }
 
-func (client HttpClient) GetAsync(url string, callback func(result *HttpGetResult)) {
+func (client *HttpClient) GetAsync(url string, callback func(result *HttpGetResult)) {
 	c_url := NewCString(url)
 	h := cgo.NewHandle(callback)
 	C.HttpClient_GetAsync(client.ptr, c_url.ptr, (C.HttpGetCallback)(C.c_http_get_callback), unsafe.Pointer(h))
@@ -99,15 +99,15 @@ type Element struct {
 	ptr unsafe.Pointer
 }
 
-func (elem Element) ElemPtr() unsafe.Pointer {
+func (elem *Element) ElemPtr() unsafe.Pointer {
 	return elem.ptr
 }
 
-func (elem Element) Name() string {
+func (elem *Element) Name() string {
 	return C.GoString(C.Element_GetName(elem.ptr))
 }
 
-func (elem Element) SetName(name string) {
+func (elem *Element) SetName(name string) {
 	c_name := NewCString(name)
 	C.Element_SetName(elem.ptr, c_name.ptr)
 }
@@ -151,11 +151,11 @@ func NewInputText(name string, size int, str string) *InputText {
 	return pobj
 }
 
-func (input_text InputText) Text() string {
+func (input_text *InputText) Text() string {
 	return C.GoString(C.InputText_GetText(input_text.ptr))
 }
 
-func (input_text InputText) SetText(text string) {
+func (input_text *InputText) SetText(text string) {
 	c_text := NewCString(text)
 	C.InputText_SetText(input_text.ptr, c_text.ptr)
 }
@@ -184,7 +184,7 @@ func c_btn_click_callback(userData unsafe.Pointer) {
 	callback()
 }
 
-func (button Button) SetOnClick(callback func()) {
+func (button *Button) SetOnClick(callback func()) {
 	if button.h_on_click != 0 {
 		button.h_on_click.Delete()
 	}
@@ -205,11 +205,11 @@ func NewScriptWindow() *ScriptWindow {
 	return pobj
 }
 
-func (wnd ScriptWindow) Show() bool {
+func (wnd *ScriptWindow) Show() bool {
 	return C.ScriptWindow_GetShow(wnd.ptr) != 0
 }
 
-func (wnd ScriptWindow) SetShow(show bool) {
+func (wnd *ScriptWindow) SetShow(show bool) {
 	if show {
 		C.ScriptWindow_SetShow(wnd.ptr, 1)
 	} else {
@@ -217,21 +217,21 @@ func (wnd ScriptWindow) SetShow(show bool) {
 	}
 }
 
-func (wnd ScriptWindow) Title() string {
+func (wnd *ScriptWindow) Title() string {
 	return C.GoString(C.ScriptWindow_GetTitle(wnd.ptr))
 }
 
-func (wnd ScriptWindow) SetTitle(title string) {
+func (wnd *ScriptWindow) SetTitle(title string) {
 	c_title := NewCString(title)
 	C.ScriptWindow_SetTitle(wnd.ptr, c_title.ptr)
 }
 
-func (wnd ScriptWindow) Add(elem IElement) {
+func (wnd *ScriptWindow) Add(elem IElement) {
 	C.ScriptWindow_Add(wnd.ptr, elem.ElemPtr())
 	wnd.elems = append(wnd.elems, elem)
 }
 
-func (wnd ScriptWindow) Remove(elem IElement) {
+func (wnd *ScriptWindow) Remove(elem IElement) {
 	C.ScriptWindow_Remove(wnd.ptr, elem.ElemPtr())
 	for i := range wnd.elems {
 		if wnd.elems[i] == elem {
@@ -241,6 +241,7 @@ func (wnd ScriptWindow) Remove(elem IElement) {
 	}
 }
 
-func (wnd ScriptWindow) Clear() {
+func (wnd *ScriptWindow) Clear() {
 	C.ScriptWindow_Clear(wnd.ptr)
+	wnd.elems = nil
 }
