@@ -10,6 +10,7 @@ package main
 import "C"
 import (
 	"runtime"
+	"runtime/cgo"
 	"unsafe"
 )
 
@@ -76,13 +77,16 @@ func (client HttpClient) Get(url string) *HttpGetResult {
 //export c_http_get_callback
 func c_http_get_callback(ptr_result unsafe.Pointer, userData unsafe.Pointer) {
 	result := NewHttpGetResult(ptr_result)
-	callback := (*func(result *HttpGetResult))(userData)
-	(*callback)(result)
+	h := cgo.Handle(userData)
+	callback := h.Value().(func(result *HttpGetResult))
+	callback(result)
+	h.Delete()
 }
 
 func (client HttpClient) GetAsync(url string, callback func(result *HttpGetResult)) {
 	c_url := NewCString(url)
-	C.HttpClient_GetAsync(client.ptr, c_url.ptr, (C.HttpGetCallback)(C.c_http_get_callback), unsafe.Pointer(&callback))
+	h := cgo.NewHandle(callback)
+	C.HttpClient_GetAsync(client.ptr, c_url.ptr, (C.HttpGetCallback)(C.c_http_get_callback), unsafe.Pointer(h))
 }
 
 type Element interface {
@@ -159,13 +163,17 @@ func (input_text InputText) SetText(text string) {
 }
 
 type Button struct {
-	ptr unsafe.Pointer
+	ptr        unsafe.Pointer
+	h_on_click cgo.Handle
 }
 
 func NewButton(name string) *Button {
 	c_name := NewCString(name)
-	pobj := &Button{C.Button_New(c_name.ptr)}
+	pobj := &Button{C.Button_New(c_name.ptr), 0}
 	runtime.SetFinalizer(pobj, func(pobj *Button) {
+		if pobj.h_on_click != 0 {
+			pobj.h_on_click.Delete()
+		}
 		C.Element_Delete(pobj.ptr)
 	})
 	return pobj
@@ -177,12 +185,17 @@ func (button Button) ElemPtr() unsafe.Pointer {
 
 //export c_btn_click_callback
 func c_btn_click_callback(userData unsafe.Pointer) {
-	callback := (*func())(userData)
-	(*callback)()
+	h := cgo.Handle(userData)
+	callback := h.Value().(func())
+	callback()
 }
 
 func (button Button) SetOnClick(callback func()) {
-	C.Button_SetOnClick(button.ptr, (C.ClickCallback)(C.c_btn_click_callback), unsafe.Pointer(&callback))
+	if button.h_on_click != 0 {
+		button.h_on_click.Delete()
+	}
+	button.h_on_click = cgo.NewHandle(callback)
+	C.Button_SetOnClick(button.ptr, (C.ClickCallback)(C.c_btn_click_callback), unsafe.Pointer(button.h_on_click))
 }
 
 type ScriptWindow struct {

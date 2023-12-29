@@ -7,9 +7,7 @@ import (
 )
 
 var window *ScriptWindow
-var input_text *InputText
 var http *HttpClient
-var get_url string
 
 //export Init
 func Init() {
@@ -17,10 +15,10 @@ func Init() {
 
 	http = NewHttpClient()
 
-	input_text = NewInputText("##URL", 256, "https://www.gutenberg.org/cache/epub/1065/pg1065.txt")
+	input_text := NewInputText("##URL", 256, "https://www.gutenberg.org/cache/epub/1065/pg1065.txt")
 	button_get := NewButton("Get!")
 	button_get.SetOnClick(func() {
-		get_url = input_text.Text()
+		get_url := input_text.Text()
 		http.GetAsync(get_url, func(result *HttpGetResult) {
 			str := result.GetString()
 			Print("Text from: " + get_url)
