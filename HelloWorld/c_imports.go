@@ -125,10 +125,6 @@ func NewText(text string) *Text {
 	return pobj
 }
 
-func (text Text) ElemPtr() unsafe.Pointer {
-	return text.ptr
-}
-
 type SameLine struct {
 	Element
 }
@@ -139,10 +135,6 @@ func NewSameLine() *SameLine {
 		C.Element_Delete(pobj.ptr)
 	})
 	return pobj
-}
-
-func (sl SameLine) ElemPtr() unsafe.Pointer {
-	return sl.ptr
 }
 
 type InputText struct {
@@ -157,10 +149,6 @@ func NewInputText(name string, size int, str string) *InputText {
 		C.Element_Delete(pobj.ptr)
 	})
 	return pobj
-}
-
-func (input_text InputText) ElemPtr() unsafe.Pointer {
-	return input_text.ptr
 }
 
 func (input_text InputText) Text() string {
@@ -187,10 +175,6 @@ func NewButton(name string) *Button {
 		C.Element_Delete(pobj.ptr)
 	})
 	return pobj
-}
-
-func (button Button) ElemPtr() unsafe.Pointer {
-	return button.ptr
 }
 
 //export c_btn_click_callback
