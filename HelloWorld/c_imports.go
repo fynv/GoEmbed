@@ -89,26 +89,36 @@ func (client HttpClient) GetAsync(url string, callback func(result *HttpGetResul
 	C.HttpClient_GetAsync(client.ptr, c_url.ptr, (C.HttpGetCallback)(C.c_http_get_callback), unsafe.Pointer(h))
 }
 
-type Element interface {
+type IElement interface {
 	ElemPtr() unsafe.Pointer
+	Name() string
+	SetName(name string)
 }
 
-func GetName(elem Element) string {
-	return C.GoString(C.Element_GetName(elem.ElemPtr()))
+type Element struct {
+	ptr unsafe.Pointer
 }
 
-func SetName(elem Element, name string) {
+func (elem Element) ElemPtr() unsafe.Pointer {
+	return elem.ptr
+}
+
+func (elem Element) Name() string {
+	return C.GoString(C.Element_GetName(elem.ptr))
+}
+
+func (elem Element) SetName(name string) {
 	c_name := NewCString(name)
-	C.Element_SetName(elem.ElemPtr(), c_name.ptr)
+	C.Element_SetName(elem.ptr, c_name.ptr)
 }
 
 type Text struct {
-	ptr unsafe.Pointer
+	Element
 }
 
 func NewText(text string) *Text {
 	c_text := NewCString(text)
-	pobj := &Text{C.Text_New(c_text.ptr)}
+	pobj := &Text{Element{C.Text_New(c_text.ptr)}}
 	runtime.SetFinalizer(pobj, func(pobj *Text) {
 		C.Element_Delete(pobj.ptr)
 	})
@@ -120,11 +130,11 @@ func (text Text) ElemPtr() unsafe.Pointer {
 }
 
 type SameLine struct {
-	ptr unsafe.Pointer
+	Element
 }
 
 func NewSameLine() *SameLine {
-	pobj := &SameLine{C.SameLine_New()}
+	pobj := &SameLine{Element{C.SameLine_New()}}
 	runtime.SetFinalizer(pobj, func(pobj *SameLine) {
 		C.Element_Delete(pobj.ptr)
 	})
@@ -136,13 +146,13 @@ func (sl SameLine) ElemPtr() unsafe.Pointer {
 }
 
 type InputText struct {
-	ptr unsafe.Pointer
+	Element
 }
 
 func NewInputText(name string, size int, str string) *InputText {
 	c_name := NewCString(name)
 	c_str := NewCString(str)
-	pobj := &InputText{C.InputText_New(c_name.ptr, C.int(size), c_str.ptr)}
+	pobj := &InputText{Element{C.InputText_New(c_name.ptr, C.int(size), c_str.ptr)}}
 	runtime.SetFinalizer(pobj, func(pobj *InputText) {
 		C.Element_Delete(pobj.ptr)
 	})
@@ -163,13 +173,13 @@ func (input_text InputText) SetText(text string) {
 }
 
 type Button struct {
-	ptr        unsafe.Pointer
+	Element
 	h_on_click cgo.Handle
 }
 
 func NewButton(name string) *Button {
 	c_name := NewCString(name)
-	pobj := &Button{C.Button_New(c_name.ptr), 0}
+	pobj := &Button{Element{C.Button_New(c_name.ptr)}, 0}
 	runtime.SetFinalizer(pobj, func(pobj *Button) {
 		if pobj.h_on_click != 0 {
 			pobj.h_on_click.Delete()
@@ -200,7 +210,7 @@ func (button Button) SetOnClick(callback func()) {
 
 type ScriptWindow struct {
 	ptr   unsafe.Pointer
-	elems []Element
+	elems []IElement
 }
 
 func NewScriptWindow() *ScriptWindow {
@@ -232,12 +242,12 @@ func (wnd ScriptWindow) SetTitle(title string) {
 	C.ScriptWindow_SetTitle(wnd.ptr, c_title.ptr)
 }
 
-func (wnd ScriptWindow) Add(elem Element) {
+func (wnd ScriptWindow) Add(elem IElement) {
 	C.ScriptWindow_Add(wnd.ptr, elem.ElemPtr())
 	wnd.elems = append(wnd.elems, elem)
 }
 
-func (wnd ScriptWindow) Remove(elem Element) {
+func (wnd ScriptWindow) Remove(elem IElement) {
 	C.ScriptWindow_Remove(wnd.ptr, elem.ElemPtr())
 	for i := range wnd.elems {
 		if wnd.elems[i] == elem {
